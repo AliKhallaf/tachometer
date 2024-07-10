@@ -1,0 +1,101 @@
+/*
+ * tacho.c
+ *
+ * Created: 12/28/2023 9:50:44 AM
+ * Author: abdulrahman
+ */
+
+#include <mega2560.h>
+#include <alcd.h>
+#include <delay.h>
+unsigned int count = 0 ; // counter of number of pulses
+unsigned int time = 0;  //number of 8 milliseconds
+unsigned int sec = 0;    // number of seconds
+char ft = 0;   // an indicator for the pass of 1 second
+unsigned int N = 4;   // number of blades or gears
+
+void main(void)
+{
+ lcd_init(16);  
+ lcd_clear();
+ lcd_printf("Press to start");
+ // ext_int0  for sensor
+ 
+ SREG.7 = 1; // GI enable
+ EIMSK |= 0x01; // ex0 enable
+ EICRA |= 0x02;   // falling edge
+ DDRD.0 = 0; PORTD.0 = 1;     
+
+// ext1 for push button
+ EIMSK |= 0x02; // ex1 enable
+ EICRA |= 0x08;   // falling edge
+ DDRD.1 = 0; PORTD.1 = 1; // enable pull up    
+ 
+ // timer0
+ 
+ TCCR0A |= 0x02;  // setting CTC mode
+ OCR0A = 124;     // compare value
+ TIMSK0 |= 0x02;  // enable interrupt with OCR0A 
+ 
+ 
+    
+    
+while (1)
+    {   
+    
+        
+        
+        if (ft)
+        {
+            ft = 0;  
+            lcd_clear();
+            lcd_gotoxy(0,1);
+            lcd_printf("The RPM = %d", 60*count/(N*sec) ); //displaying the speed every second
+            if (sec == 30)
+            {   
+                
+                lcd_clear(); 
+                lcd_printf("press to start");
+                lcd_gotoxy(0,1);
+                lcd_printf("Last RPM = %d", 60*count/(N*sec) );
+                TCCR0B &= 0b11111000;
+                count = 0;
+                
+            }
+               
+            
+            
+        }
+
+    }
+}
+
+interrupt [2] void ext_int0 (void)
+{
+    count++;
+    lcd_gotoxy(0,0); 
+    lcd_printf("Counting: c= %d",count/N );       
+}
+
+interrupt [3] void ext_int1 (void)
+{
+    TCCR0B |= 0x04;  // enable timer0   
+    count = 0;    
+    lcd_clear();
+    lcd_printf("Counting ..." );
+    time = 0; 
+    sec = 0;
+
+     
+}
+
+interrupt [22] void timer0_CTCA(void)
+{   
+    
+    time++;
+    if (time ==500)
+    {   sec++;
+        ft=1; 
+        time = 0;
+    }
+}    
