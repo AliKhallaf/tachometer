@@ -2,7 +2,7 @@
  * tacho.c
  *
  * Created: 12/28/2023 9:50:44 AM
- * Author: abdulrahman
+ * Author: ali
  */
 
 #include <mega2560.h>
